@@ -1,15 +1,28 @@
 export function Logo({ className = "h-8 w-8" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden="true" focusable="false">
-      <defs>
-        <linearGradient id="h2h-logo-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#7dd8c3" />
-          <stop offset="1" stopColor="#1f8f7c" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="9" fill="#0e0e14" stroke="url(#h2h-logo-g)" strokeOpacity="0.5" />
-      <path d="M9 23V9h3.2v5.2h7.6V9H23v14h-3.2v-5.6h-7.6V23z" fill="url(#h2h-logo-g)" />
-      <circle cx="24.4" cy="7.6" r="2.1" fill="#45c8aa" />
+    <svg
+      viewBox="0 0 32 32"
+      className={className}
+      aria-hidden="true"
+      focusable="false"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Precision geometric H2H monogram emblem */}
+      <rect width="32" height="32" rx="7" fill="#111111" />
+      {/* Outer frame hairline */}
+      <rect x="0.5" y="0.5" width="31" height="31" rx="6.5" stroke="#FFFFFF" strokeOpacity="0.15" />
+      {/* Refined H geometry */}
+      <path
+        d="M8.5 22V10H11.5V14.6H14.5V10H17.5V22H14.5V17H11.5V22H8.5Z"
+        fill="#FFFFFF"
+      />
+      {/* Subtle modern accent dot / server node indicator */}
+      <circle cx="23.5" cy="11.5" r="2.2" fill="#FFFFFF" />
+      <path
+        d="M20 22V19.5H23.5V17H21V14.5H25V19.5H22V22H25.5V22H20Z"
+        fill="#E6E6E6"
+      />
     </svg>
   );
 }

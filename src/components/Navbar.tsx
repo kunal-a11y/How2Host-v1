@@ -1,161 +1,187 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { Logo } from "./Logo";
-import { GetStartedButton } from "./GetStartedButton";
 
-const links = [
-  { label: "Home", href: "#home" },
-  { label: "Services", href: "#services" },
-  { label: "Pricing", href: "#pricing" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Portfolio", href: "#portfolio" },
-  { label: "FAQ", href: "#faq" },
-  { label: "Contact", href: "#contact" },
+const navLinks = [
+  { label: "Home", href: "/" },
+  { label: "Services", href: "/services" },
+  { label: "Projects", href: "/projects" },
+  { label: "About", href: "/about" },
+  { label: "Updates", href: "/updates" },
+  { label: "Contact", href: "/contact" },
 ];
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
-  const reduce = useReducedMotion();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 15);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // lock body scroll while the mobile menu is open
+  // Close mobile navigation on route change
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll when mobile menu is active
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
     return () => {
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [mobileMenuOpen]);
+
+  const isActive = (href: string) => {
+    if (href === "/") {
+      return location.pathname === "/";
+    }
+    return location.pathname.startsWith(href);
+  };
 
   return (
     <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all duration-500 ${
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "border-b border-white/[0.07] bg-ink-950/70 backdrop-blur-xl supports-[backdrop-filter]:bg-ink-950/60"
-          : "border-b border-transparent bg-transparent"
+          ? "border-b border-[#E6E6E6] bg-white/95 backdrop-blur-md py-3.5 shadow-subtle"
+          : "border-b border-transparent bg-white/70 backdrop-blur-sm py-5"
       }`}
     >
-      <nav className="container-site flex h-16 items-center justify-between lg:h-[4.5rem]" aria-label="Main">
-        <a href="#home" className="flex items-center gap-2.5" aria-label="How2Host home">
-          <Logo className="h-8 w-8" />
-          <span className="text-lg font-bold tracking-tight">
-            How2<span className="text-accent-400">Host</span>
-          </span>
-        </a>
+      <nav className="container-site flex items-center justify-between" aria-label="Main Navigation">
+        {/* Logo and Wordmark */}
+        <Link
+          to="/"
+          className="group flex items-center gap-3 transition-opacity duration-200 hover:opacity-80"
+          aria-label="How2Host Home"
+        >
+          <Logo className="h-8 w-8 text-[#111111] transition-transform duration-300 group-hover:scale-105" />
+          <div className="flex flex-col">
+            <span className="text-lg font-bold tracking-tight text-[#111111]">
+              How2<span className="font-semibold text-[#666666]">Host</span>
+            </span>
+          </div>
+        </Link>
 
-        <ul className="hidden items-center gap-1 lg:flex">
-          {links.map((l) => (
-            <li key={l.href}>
-              <a
-                href={l.href}
-                className="rounded-full px-3.5 py-2 text-sm text-mist-300 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
-              >
-                {l.label}
-              </a>
-            </li>
-          ))}
+        {/* Desktop Navigation Links */}
+        <ul className="hidden items-center gap-1 md:flex">
+          {navLinks.map((link) => {
+            const active = isActive(link.href);
+            return (
+              <li key={link.href}>
+                <Link
+                  to={link.href}
+                  className={`relative px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                    active ? "text-[#111111]" : "text-[#666666] hover:text-[#111111]"
+                  }`}
+                >
+                  {link.label}
+                  {active && (
+                    <motion.div
+                      layoutId="activeNavIndicator"
+                      className="absolute inset-x-3 -bottom-1 h-[2px] bg-[#111111]"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
-        <div className="hidden lg:block">
-          <GetStartedButton />
+        {/* Desktop CTA Button */}
+        <div className="hidden items-center gap-3 md:flex">
+          <Link
+            to="/contact"
+            className="inline-flex items-center justify-center rounded-lg bg-[#111111] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm transition-all duration-200 hover:bg-[#262626] hover:shadow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#111111]"
+          >
+            Discuss a Project
+          </Link>
         </div>
 
+        {/* Mobile Hamburger Button */}
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="mobile-menu"
-          aria-label={open ? "Close menu" : "Open menu"}
-          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] lg:hidden"
+          onClick={() => setMobileMenuOpen((open) => !open)}
+          className="relative z-50 flex h-10 w-10 items-center justify-center rounded-lg border border-[#E6E6E6] bg-white text-[#111111] transition-colors hover:bg-[#F7F7F5] md:hidden"
+          aria-expanded={mobileMenuOpen}
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         >
-          <span className="sr-only">{open ? "Close menu" : "Open menu"}</span>
-          <span className="relative block h-[18px] w-[18px]">
-            <AnimatePresence initial={false}>
-              {open ? (
-                <motion.svg
-                  key="close"
-                  initial={{ opacity: 0, rotate: -90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                  width="18"
-                  height="18"
-                  viewBox="0 0 18 18"
-                  fill="none"
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                >
-                  <path d="M4 4l10 10M14 4L4 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </motion.svg>
-              ) : (
-                <motion.svg
-                  key="open"
-                  initial={{ opacity: 0, rotate: 90 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: -90 }}
-                  transition={{ duration: 0.2 }}
-                  width="18"
-                  height="18"
-                  viewBox="0 0 18 18"
-                  fill="none"
-                  aria-hidden="true"
-                  className="absolute inset-0"
-                >
-                  <path d="M2 4.5h14M2 9h14M2 13.5h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </motion.svg>
-              )}
-            </AnimatePresence>
-          </span>
+          <div className="flex flex-col items-center justify-center gap-1.5 w-5">
+            <span
+              className={`h-[1.5px] w-5 bg-[#111111] transition-transform duration-300 ${
+                mobileMenuOpen ? "translate-y-[4.5px] rotate-45" : ""
+              }`}
+            />
+            <span
+              className={`h-[1.5px] w-5 bg-[#111111] transition-opacity duration-300 ${
+                mobileMenuOpen ? "opacity-0" : "opacity-100"
+              }`}
+            />
+            <span
+              className={`h-[1.5px] w-5 bg-[#111111] transition-transform duration-300 ${
+                mobileMenuOpen ? "-translate-y-[4.5px] -rotate-45" : ""
+              }`}
+            />
+          </div>
         </button>
       </nav>
 
-      <div
-        id="mobile-menu"
-        className={`fixed inset-0 top-16 z-40 bg-ink-950/95 backdrop-blur-2xl transition-opacity duration-300 lg:hidden ${
-          open ? "" : "pointer-events-none"
-        }`}
-        style={{ opacity: open ? 1 : 0 }}
-        aria-hidden={!open}
-      >
-        <ul className="container-site flex flex-col gap-1 py-8">
-          {links.map((l, i) => (
-            <li
-              key={l.href}
-              className={`transition-all duration-500 ${reduce ? "" : "motion-safe:-translate-x-4"}`}
-              style={{
-                transitionDelay: open ? `${0.05 + i * 0.05}s` : "0s",
-                opacity: open ? 1 : 0,
-                transform: open || reduce ? "none" : undefined,
-              }}
-            >
-              <a
-                href={l.href}
-                onClick={() => setOpen(false)}
-                tabIndex={open ? 0 : -1}
-                className="block rounded-2xl px-4 py-4 text-2xl font-semibold tracking-tight text-white/90 transition-colors hover:bg-white/[0.05] hover:text-white"
-              >
-                {l.label}
-              </a>
-            </li>
-          ))}
-          <li
-            className="mt-4 px-4 transition-all duration-500"
-            style={{
-              transitionDelay: open ? "0.4s" : "0s",
-              opacity: open ? 1 : 0,
-              transform: open || reduce ? "none" : "translateY(12px)",
-            }}
+      {/* Mobile Slide-out Menu */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="fixed inset-0 top-[65px] z-40 flex flex-col bg-white px-6 py-8 md:hidden shadow-xl"
           >
-            <GetStartedButton full />
-          </li>
-        </ul>
-      </div>
+            <ul className="flex flex-col gap-5">
+              {navLinks.map((link) => {
+                const active = isActive(link.href);
+                return (
+                  <li key={link.href}>
+                    <Link
+                      to={link.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`block text-2xl font-semibold tracking-tight transition-colors ${
+                        active ? "text-[#111111]" : "text-[#666666] hover:text-[#111111]"
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="mt-auto border-t border-[#E6E6E6] pt-8">
+              <Link
+                to="/contact"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex w-full items-center justify-center rounded-lg bg-[#111111] py-3.5 text-center text-sm font-semibold uppercase tracking-wider text-white"
+              >
+                Discuss a Project
+              </Link>
+              <div className="mt-6 flex flex-col gap-1 text-xs text-[#666666]">
+                <p>Email: mindcraftgamer26@gmail.com</p>
+                <p>WhatsApp: +91 98991 13229</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
