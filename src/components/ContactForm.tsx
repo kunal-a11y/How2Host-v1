@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router-dom";
-import { CheckCircle2, AlertCircle, Send, ArrowRight } from "lucide-react";
+import { CheckCircle2, AlertCircle, Send, MessageCircle } from "lucide-react";
 import { companyConfig } from "../data/companyConfig";
 
 const serviceOptions = [
@@ -49,7 +49,7 @@ export function ContactForm() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.email || !formData.description) {
+    if (!formData.name.trim() || !formData.email.trim() || !formData.description.trim()) {
       setErrorMessage("Please complete all required fields.");
       setStatus("error");
       return;
@@ -64,11 +64,17 @@ export function ContactForm() {
     setStatus("submitting");
     setErrorMessage("");
 
+    // Prepare direct mailto parameters
+    const mailtoSubject = encodeURIComponent(`Project Brief: ${formData.service} — ${formData.name}`);
+    const mailtoBody = encodeURIComponent(
+      `Name: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.company || "N/A"}\nService Requested: ${formData.service}\nEstimated Budget: ${formData.budget}\nTarget Timeline: ${formData.timeline}\n\nProject Scope & Requirements:\n${formData.description}\n\n---\nSent via How2Host Contact Portal`
+    );
+    const mailtoUrl = `mailto:${companyConfig.contact.email}?subject=${mailtoSubject}&body=${mailtoBody}`;
+
+    // Attempt backend webhook if configured, otherwise launch verified mailto
     try {
-      // Connect to Formspree endpoint or fallback to client-side mailto / verified record
-      // In production, configure VITE_FORMSPREE_ID or email service webhook.
-      // If none set, gracefully package the submission and trigger direct mail client without fake success.
-      const response = await fetch("https://formspree.io/f/xbjnqvgw", {
+      const endpoint = import.meta.env.VITE_CONTACT_ENDPOINT || "https://formspree.io/f/xbjnqvgw";
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -82,28 +88,19 @@ export function ContactForm() {
           budget: formData.budget,
           timeline: formData.timeline,
           description: formData.description,
-          _subject: `New Inquiry from ${formData.name} - How2Host`,
+          _subject: `New Project Brief from ${formData.name} - How2Host`,
         }),
       });
 
       if (response.ok) {
         setStatus("success");
       } else {
-        // Fallback: construct verified direct email trigger
-        const mailtoSubject = encodeURIComponent(`Project Inquiry: ${formData.service} - ${formData.name}`);
-        const mailtoBody = encodeURIComponent(
-          `Name: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.company}\nService: ${formData.service}\nBudget: ${formData.budget}\nTimeline: ${formData.timeline}\n\nProject Scope:\n${formData.description}`
-        );
-        window.location.href = `mailto:${companyConfig.contact.email}?subject=${mailtoSubject}&body=${mailtoBody}`;
+        // Fallback to mailto
+        window.location.href = mailtoUrl;
         setStatus("success");
       }
     } catch {
-      // Network failure / fallback
-      const mailtoSubject = encodeURIComponent(`Project Inquiry: ${formData.service} - ${formData.name}`);
-      const mailtoBody = encodeURIComponent(
-        `Name: ${formData.name}\nEmail: ${formData.email}\nCompany: ${formData.company}\nService: ${formData.service}\nBudget: ${formData.budget}\nTimeline: ${formData.timeline}\n\nProject Scope:\n${formData.description}`
-      );
-      window.location.href = `mailto:${companyConfig.contact.email}?subject=${mailtoSubject}&body=${mailtoBody}`;
+      window.location.href = mailtoUrl;
       setStatus("success");
     }
   };
@@ -115,10 +112,10 @@ export function ContactForm() {
           <CheckCircle2 className="h-7 w-7" />
         </div>
         <h3 className="mt-6 text-2xl font-bold tracking-tight text-[#111111]">
-          Inquiry Initiated
+          Project Brief Prepared
         </h3>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[#4B5563]">
-          Thank you for providing your project brief. We will review your technical requirements and contact you via email ({formData.email}) or phone within 1 business day.
+          Thank you for providing your project details. We will review your requirements and reach out to {formData.email} promptly.
         </p>
         <div className="mt-8 pt-6 border-t border-[#E6E6E6] flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
@@ -138,15 +135,16 @@ export function ContactForm() {
             }}
             className="text-xs font-semibold uppercase tracking-wider text-[#111111] hover:underline"
           >
-            Submit Another Inquiry
+            Submit Another Brief
           </button>
           <a
             href={companyConfig.contact.whatsAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-[#111111] px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#25D366] px-5 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm hover:bg-[#20BD5A] transition-colors"
           >
-            Chat on WhatsApp
+            <MessageCircle className="h-4 w-4" />
+            <span>Chat on WhatsApp</span>
           </a>
         </div>
       </div>
@@ -225,7 +223,7 @@ export function ContactForm() {
         {/* Penetration Testing Scope Notice */}
         {isPentest && (
           <div className="rounded-lg border border-[#E6E6E6] bg-[#F7F7F5] p-4 text-xs leading-relaxed text-[#4B5563]">
-            <p className="font-semibold text-[#111111]">Cybersecurity Engagement Note:</p>
+            <p className="font-semibold text-[#111111]">Cybersecurity Engagement Protocol:</p>
             <p className="mt-1">
               All penetration testing and security assessments require explicit written authorization, verified asset ownership, and a formal rules of engagement agreement prior to commencement.
             </p>
@@ -314,7 +312,7 @@ export function ContactForm() {
           <button
             type="submit"
             disabled={status === "submitting"}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#111111] py-4 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#262626] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#111111] py-4 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition-all hover:bg-[#262626] disabled:opacity-50 active:scale-[0.99]"
           >
             {status === "submitting" ? (
               <span>Submitting Brief...</span>
